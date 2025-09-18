@@ -1,15 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Home</title>
-</head>
-<body>
-    <h2>Welcome to My Mini Site!</h2>
-    <p>Check out the other pages:</p>
-    <ul>
-        <li><a href="/about">About Me</a></li>
-        <li><a href="/songs">My Favorite Songs</a></li>
-    </ul>
-</body>
-</html>
+{% extends "base.html" %}
 
+{% block title %}Home{% endblock %}
+
+{% block page_content %}
+    {% import "macros.html" as macros %}
+
+    {# Dynamic greeting #}
+    {% if user %}
+        <h2>Hello, {{ user }}!</h2>
+    {% else %}
+        <h2>Hi, Anonymous!</h2>
+    {% endif %}
+
+    {# Favorite songs list #}
+    <h3>My Favorite Songs:</h3>
+    <ul>
+        {% for song in favorite_songs %}
+            {{ macros.render_song_title(song) }}
+        {% endfor %}
+    </ul>
+
+    {# Example of least favorite song #}
+    {% if bad_song %}
+        <p>My least favorite song ever:</p>
+        <ul>
+            {{ macros.render_song_title(bad_song) }}
+        </ul>
+    {% endif %}
+{% endblock page_content %}

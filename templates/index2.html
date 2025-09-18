@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block page_content %}
+    {% import "macros.html" as macros %}
+
+    {% if user %}
+        <h2>Hello, {{ user }}!</h2>
+    {% else %}
+        <h2>Hi, Anonymous!</h2>
+    {% endif %}
+
+    <h3>My Favorite Songs:</h3>
+    <ul>
+        {% for song in favorite_songs %}
+            {{ macros.render_song_title(song) }}
+        {% endfor %}
+    </ul>
+
+    {% if bad_song %}
+        <p>My least favorite song ever:</p>
+        <ul>
+            {{ macros.render_song_title(bad_song) }}
+        </ul>
+    {% endif %}
+{% endblock page_content %}
+
