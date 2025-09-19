@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% import "bootstrap/wtf.html" as wtf %}
+
+{% block title %}Zodiac Calculator{% endblock %}
+
+{% block page_content %}
+<h1>Find Your Zodiac Sign!</h1>
+<p>Enter your birthdate below:</p>
+
+{{ wtf.quick_form(form) }}
+
+{% endblock page_content %}
+

@@ -1,30 +1,32 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% import "macros.html" as macros %}
 
-{% block title %}Home{% endblock %}
+{% block title %}Ragtime{% endblock %}
 
 {% block page_content %}
-    {% import "macros.html" as macros %}
+<h1>Welcome to Ragtime, {% if name %}{{ name }}{% else %}Anonymous{% endif %}!</h1>
+<p>Enjoy your stay.</p>
 
-    {# Dynamic greeting #}
-    {% if user %}
-        <h2>Hello, {{ user }}!</h2>
-    {% else %}
-        <h2>Hi, Anonymous!</h2>
-    {% endif %}
+{{ wtf.quick_form(form) }}
 
-    {# Favorite songs list #}
+{% if favorite_songs %}
     <h3>My Favorite Songs:</h3>
     <ul>
         {% for song in favorite_songs %}
             {{ macros.render_song_title(song) }}
         {% endfor %}
     </ul>
+{% endif %}
 
-    {# Example of least favorite song #}
-    {% if bad_song %}
-        <p>My least favorite song ever:</p>
-        <ul>
-            {{ macros.render_song_title(bad_song) }}
-        </ul>
-    {% endif %}
+{% if bad_song %}
+    <p>My least favorite song ever:</p>
+    <ul>
+        <li>{{ bad_song }}</li>
+    </ul>
+{% endif %}
 {% endblock page_content %}
+
+
+
+
