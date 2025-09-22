@@ -6,4 +6,16 @@ __pycache__/
 *.py[cod]
 .vscode/
 *.pyo
+<<<<<<< HEAD
 .env
+=======
+.env
+
+# Database files
+*.sqlite
+*.sqlite3   
+instance/
+
+# Migrations
+migrations/
+>>>>>>> c1ee940 (add other files and migrations)

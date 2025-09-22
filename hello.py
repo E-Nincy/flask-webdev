@@ -6,6 +6,10 @@ from flask_bootstrap import Bootstrap
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 import os
+<<<<<<< HEAD
+=======
+from flask_migrate import Migrate
+>>>>>>> c1ee940 (add other files and migrations)
 
 load_dotenv()
 
@@ -13,14 +17,44 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY") 
+<<<<<<< HEAD
 app.config['SQLALCHEMY_DATABASE_URI'] =\
     'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite')
+=======
+app.config['SQLALCHEMY_DATABASE_URI'] =(
+    'sqlite:///' + os.path.join(basedir, 'data-dev.sqlite'))
+>>>>>>> c1ee940 (add other files and migrations)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
 bootstrap = Bootstrap(app)
+migrate = Migrate(app, db)
 
+<<<<<<< HEAD
+=======
+class Role(db.Model):
+    __tablename__ = 'roles'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), unique=True)
+    users = db.relationship('User', backref='role', lazy='dynamic')
+    def __repr__(self):
+        return f"<Role {self.name}>"
+    
+class User(db.Model):
+    __tablename__ = 'users'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(64), unique=True, index=True)
+    role_id = db.Column(db.Integer, db.ForeignKey('roles.id'))
+
+    def __repr__(self):
+        return f"<User {self.username}>"
+    
+@app.shell_context_processor
+def make_shell_context():
+    return dict(db=db, User=User, Role=Role)
+
+>>>>>>> c1ee940 (add other files and migrations)
 # --- Form ---
 class NameForm(FlaskForm):
     name = StringField("What is your name?", validators=[DataRequired()])
@@ -31,17 +65,35 @@ class NameForm(FlaskForm):
 def home():
     form = NameForm()
     if form.validate_on_submit():
+<<<<<<< HEAD
         session['name'] = form.name.data
         flash(f"Great! Welcome, {form.name.data}!")
         return redirect(url_for('home'))
     return render_template('index.html', form=form, name=session.get('name'))
+=======
+        name_entered = form.name.data
+        user = User.query.filter_by(username=name_entered).first()
+        if user is None:
+            user = User(username=name_entered)
+            db.session.add(user)
+            db.session.commit()
+            session['known'] = False
+            session['name'] = name_entered
+        else:
+            session['known'] = True
+            session['name'] = name_entered
+        flash('Great! We hope you enjoy the community')
+        form.name.data = ''
+        return redirect(url_for('home'))
+    return render_template('index.html',form=form, name=session.get('name'), known=session.get('known', False))
+>>>>>>> c1ee940 (add other files and migrations)
 
 # --- About Page ---
 @app.route('/about')
 def about():
     return '''
     <h2>About Me</h2>
-    <p>Hi! I'm Nin, currently learning Python and web development.
+    <p>Hi! I'm, currently learning Python and web development.
     I hope to become really confident building full-stack web apps by the end of this course. 
     I love coding, coffee, and anything tech!</p>
     '''
@@ -113,8 +165,13 @@ def get_zodiac_sign(month, day):
         return "Sagittarius"
 
 def get_chinese_zodiac(year):
+<<<<<<< HEAD
     animals = ["Monkey", "Rooster", "Dog", "Pig", "Rat", "Ox", 
                "Tiger", "Rabbit", "Dragon", "Snake", "Horse", "Goat"]
+=======
+    animals = ["Rat", "Ox", "Tiger", "Rabbit", "Dragon", "Snake",
+               "Horse", "Goat", "Monkey", "Rooster", "Dog", "Pig"]
+>>>>>>> c1ee940 (add other files and migrations)
     return animals[year % 12]
 
 # --- Route /zodiac ---
