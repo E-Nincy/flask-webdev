@@ -14,8 +14,12 @@ __pycache__/
 # Database files
 *.sqlite
 *.sqlite3   
+<<<<<<< HEAD
 instance/
 
 # Migrations
 migrations/
 >>>>>>> c1ee940 (add other files and migrations)
+=======
+instance/
+>>>>>>> 2365c6b (add files)
