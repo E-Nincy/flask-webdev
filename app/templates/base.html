@@ -20,6 +20,12 @@
                 <li><a href="/about">About</a></li>
                 <li><a href="/songs">Songs</a></li>
             </ul>
+            <ul class="nav navbar-nav navbar-right">
+                {% if current_user.is_authenticated %}
+                <li><a href="{{ url_for('auth.logout') }}">Log out</a></li>
+                {% else %}
+                <li><a href="{{ url_for('auth.login') }}">Log in</a></li>
+                {% endif %}
         </div>
     </div>
 </div>
@@ -27,15 +33,17 @@
 
 {% block content %}
 <div class="container">
-    {% for msg in get_flashed_messages() %}
-        <div class="alert alert-warning alert-dismissible">
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
-            {{ msg }}
-        </div>
+    {% for category, message in get_flashed_messages(with_categories=True) %}
+      <div class="alert alert-{{ category }} alert-dismissible" style="font-size:1.2em;">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {{ message }}
+      </div>
     {% endfor %}
+    
     {% block page_content %}{% endblock page_content %}
 </div>
 {% endblock content %}
+
 
 
 

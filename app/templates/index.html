@@ -5,13 +5,6 @@
 {% block title %}Ragtime{% endblock %}
 
 {% block page_content %}
-<<<<<<< HEAD
-<h1>Welcome to Ragtime, {% if name %}{{ name }}{% else %}Anonymous{% endif %}!</h1>
-<p>Enjoy your stay.</p>
-
-{{ wtf.quick_form(form) }}
-
-=======
 <h1>Welcome to Ragtime, {% if name %}{{name}}{% else %}Anonymous{% endif %}!</h1>
 <div class="page-header">
     {% if not known %}
@@ -22,8 +15,6 @@
 </div>
 
 {{ wtf.quick_form(form) }}
-
->>>>>>> c1ee940 (add other files and migrations)
 {% if favorite_songs %}
     <h3>My Favorite Songs:</h3>
     <ul>
