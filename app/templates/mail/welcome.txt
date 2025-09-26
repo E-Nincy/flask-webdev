@@ -1,0 +1,8 @@
+Hello {{ user.username }}!
+
+Welcome to our app! We're really glad to have you onboard.
+
+Feel free to explore and enjoy our features.
+
+Cheers,
+The App Team

@@ -1,25 +1,48 @@
 {% extends "base.html" %}
 
-{% block content %}
-  <h2>Register</h2>
-  <form method="post">
-    {{ form.hidden_tag() }}
+{% block page_content %}
+<div style="display: flex; flex-direction: column; align-items: center; margin-top: 2rem;">
+    <h2>Register</h2>
+    
+    <form method="post" style="text-align: left; width: 300px;">
+        {{ form.hidden_tag() }}
+
     <p>
       {{ form.username.label }}<br>
       {{ form.username(size=32) }}
+      {% for error in form.username.errors %}
+        <span style="color:red;">{{ error }}</span>
+      {% endfor %}
     </p>
+
     <p>
       {{ form.email.label }}<br>
       {{ form.email(size=32) }}
+      {% for error in form.email.errors %}
+        <span style="color:red;">{{ error }}</span>
+      {% endfor %}
     </p>
+
     <p>
       {{ form.password.label }}<br>
       {{ form.password(size=32) }}
+      {% for error in form.password.errors %}
+        <span style="color:red;">{{ error }}</span>
+      {% endfor %}
     </p>
+
     <p>
-      {{ form.password2.label }}<br>
-      {{ form.password2(size=32) }}
+      {{ form.password_confirm.label }}<br>
+      {{ form.password_confirm(size=32) }}
+      {% for error in form.password_confirm.errors %}
+        <span style="color:red;">{{ error }}</span>
+      {% endfor %}
     </p>
+
     <p>{{ form.submit() }}</p>
   </form>
-{% endblock %}
+
+  <p>Already have an account? <a href="{{ url_for('auth.login') }}">Log in here</a></p>
+  <p><a href="{{ url_for('main.home') }}">Go back home</a></p>
+{% endblock page_content %}
+

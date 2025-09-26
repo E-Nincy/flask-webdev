@@ -2,9 +2,20 @@ import os
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 
-class Config: 
-    SECRET_KEY = os.getenv("SECRET_KEY") 
+class Config:
+    SECRET_KEY = os.getenv("SECRET_KEY")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # --- Flask-Mail config ---
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+
+    RAGTIME_ADMIN = os.environ.get('RAGTIME_ADMIN')
+    RAGTIME_MAIL_SUBJECT_PREFIX = 'Ragtime —'
+    RAGTIME_MAIL_SENDER = 'Ragtime Admin <ragtime.flask@gmail.com>'
 
     @staticmethod
     def init_app(app):

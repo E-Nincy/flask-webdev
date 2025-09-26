@@ -1,0 +1,10 @@
+Hello Admin,
+
+A new user has registered:
+
+Username: {{ user.username }}
+Email: {{ user.email }}
+Registered at: {{ time }}
+
+Best,
+Your App

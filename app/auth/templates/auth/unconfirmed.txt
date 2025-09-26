@@ -1,0 +1,11 @@
+Your Account Is Unconfirmed
+
+You have not confirmed your account yet.
+We would love for you to join our community! Before you do, however,
+you will need to confirm your account with us first.
+
+Please check your inbox and look for an email with a confirmation link.
+
+If you need a new one, no problem!
+Just visit this link: {{ url_for('auth.resend_confirmation', _external=True) }}
+and we will send you a new confirmation email.
