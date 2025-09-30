@@ -1,10 +1,21 @@
 from flask import session, render_template, redirect, url_for, flash
 from . import main
-from .forms import NameForm, ZodiacForm
+from .forms import NameForm, ZodiacForm, EditProfileForm, AdminLevelEditProfileForm
 from .. import db
-from ..models import Role, User
-from flask_login import login_required, login_user
+from ..models import Role, User, Permission
+from flask_login import login_required, login_user, current_user
+from ..decorators import admin_required, permission_required
 
+def admin_required(f):
+    """Decorator that ensures only the admin can access."""
+    from functools import wraps
+    from flask import abort
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_administrator():
+            abort(403)
+        return f(*args, **kwargs)
+    return decorated_function
 
 @main.route('/', methods=['GET', 'POST'])
 def home():
@@ -45,6 +56,11 @@ def top_secret():
            "You have exclusive access to this page. "\
            "Now let me get your cocktail."
 
+@main.route('/user/<username>')
+def user(username):
+    user = User.query.filter_by(username=username).first_or_404()
+    return render_template('user.html', user=user)
+
 # --- About ---
 @main.route('/about')
 def about():
@@ -69,9 +85,54 @@ def songs():
                            favorite_songs=favorite_songs, bad_song=bad_song)
 
 # --- User profile ---
-@main.route('/user/<username>')
-def user_profile(username):
-    return render_template("user.html", username=username)
+#@main.route('/user/<username>')
+#def user_profile(username):
+    #return render_template("user.html", username=username)#
+
+@main.route('/edit-profile', methods=['GET', 'POST'])
+@login_required
+def edit_profile():
+    form = EditProfileForm()
+    if form.validate_on_submit():
+        current_user.name = form.name.data
+        current_user.location = form.location.data
+        current_user.bio = form.bio.data
+        db.session.add(current_user._get_current_object())
+        db.session.commit()
+        flash('You successfully updated your profile! Looks great.', 'success')
+        return redirect(url_for('.user', username=current_user.username))
+    form.name.data = current_user.name
+    form.location.data = current_user.location
+    form.bio.data = current_user.bio
+    return render_template('edit_profile.html', form=form)
+
+@main.route('/editprofile/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def admin_edit_profile(id):
+    user = User.query.get_or_404(id)
+    form = AdminLevelEditProfileForm(user=user)
+
+    if form.validate_on_submit():
+        user.username = form.username.data
+        user.confirmed = form.confirmed.data
+        user.role = Role.query.get(form.role.data)
+        user.name = form.name.data
+        user.location = form.location.data
+        user.bio = form.bio.data
+        db.session.commit()
+        flash('The profile has been updated by the admin!', 'success')
+        return redirect(url_for('.user_profile', username=user.username))
+
+    # Pre-fill the form
+    form.username.data = user.username
+    form.confirmed.data = user.confirmed
+    form.role.data = user.role_id
+    form.name.data = user.name
+    form.location.data = user.location
+    form.bio.data = user.bio
+
+    return render_template('admin_edit_profile.html', form=form, user=user)
 
 # --- Zodiac functions ---
 def get_zodiac_sign(month, day):
@@ -116,3 +177,15 @@ def zodiac():
         flash(f"Your Western Zodiac sign is {western} and your Chinese Zodiac animal is {chinese}!", "warning")
         return redirect(url_for('.zodiac'))
     return render_template('zodiac.html', form=form)
+
+@main.route('/admin')
+@login_required
+@admin_required
+def for_admins_only():
+    return "Welcome, administrator!"
+
+@main.route('/moderate')
+@login_required
+@permission_required(Permission.MODERATE)
+def for_moderators_only():
+    return "Greetings, moderator!"

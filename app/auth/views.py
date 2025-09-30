@@ -1,6 +1,6 @@
 from flask import render_template, redirect, url_for, flash, request, current_app
 from . import auth
-from .forms import RegistrationForm, LoginForm
+from .forms import RegistrationForm, LoginForm, ChangeEmailForm, ChangePasswordForm
 from .. import db
 from ..models import User
 from ..email import send_email   # <- import the email sending function
@@ -75,6 +75,33 @@ def login():
 
     return render_template('auth/login.html', form=form)
 
+@auth.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    form = ChangePasswordForm()
+    if form.validate_on_submit():
+        if not current_user.verify_password(form.old_password.data):
+            flash('Current password is incorrect.', 'danger')
+            return redirect(url_for('auth.change_password'))
+        current_user.password = form.new_password.data
+        db.session.commit()
+        flash('Your password has been updated!', 'success')
+        return redirect(url_for('main.user', username=current_user.username))
+    return render_template('auth/change_password.html', form=form)
+
+# --- Change email ---
+@auth.route('/change-email', methods=['GET', 'POST'])
+@login_required
+def change_email_request():
+    form = ChangeEmailForm()
+    if form.validate_on_submit():
+        current_user.email = form.new_email.data
+        db.session.commit()
+        flash('Your email has been updated!', 'success')
+        return redirect(url_for('main.user', username=current_user.username))
+    return render_template('auth/change_email.html', form=form)
+
+
 @auth.route('/logout')
 def logout():
     logout_user()
@@ -104,13 +131,13 @@ def confirm(token):
 
 @auth.before_app_request
 def before_request():
-    if (
-        current_user.is_authenticated
-        and not current_user.confirmed
-        and request.blueprint != 'auth'
-        and request.endpoint != 'static'
-    ):
-        return redirect(url_for('auth.unconfirmed'))
+    if current_user.is_authenticated:
+        current_user.ping()
+        if not current_user.confirmed \
+                and request.endpoint \
+                and request.blueprint != 'auth' \
+                and request.endpoint != 'static':
+            return redirect(url_for('auth.unconfirmed'))
 
 
 @auth.route('/unconfirmed')

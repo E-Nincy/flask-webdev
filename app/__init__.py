@@ -6,6 +6,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_mail import Mail
 from dotenv import load_dotenv
+from flask_moment import Moment
 
 # Load environment variables from .env
 load_dotenv()
@@ -16,6 +17,7 @@ bootstrap = Bootstrap()
 migrate = Migrate()
 login_manager = LoginManager()
 mail = Mail()
+moment = Moment()
 
 def create_app(config_name='default'):
     """Application Factory - creates and configures the Flask app"""
@@ -35,6 +37,7 @@ def create_app(config_name='default'):
     login_manager.login_message = "Please log in to access this page."
     login_manager.login_message_category = "warning"
     mail.init_app(app)
+    moment.init_app(app)
 
     # --- Register blueprints ---
     from .main import main as main_blueprint

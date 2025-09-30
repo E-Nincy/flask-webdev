@@ -13,7 +13,7 @@ def app():
         db.drop_all()
 
 @pytest.fixture
-def user(new_app): 
+def user(app): 
     u = User(username='testuser', email='test@test.com', password='password')
     db.session.add(u)
     db.session.commit()
