@@ -1,8 +1,8 @@
 from flask import session, render_template, redirect, url_for, flash
 from . import main
-from .forms import NameForm, ZodiacForm, EditProfileForm, AdminLevelEditProfileForm
+from .forms import NameForm, ZodiacForm, EditProfileForm, AdminLevelEditProfileForm, CompositionForm
 from .. import db
-from ..models import Role, User, Permission
+from ..models import Role, User, Permission, Composition
 from flask_login import login_required, login_user, current_user
 from ..decorators import admin_required, permission_required
 
@@ -17,37 +17,40 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+@main.route('/')
+def index():
+    compositions = Composition.query.order_by(
+        Composition.timestamp.desc()
+    ).all()
+    return render_template(
+        'index.html',
+        compositions=compositions
+    )
+
 @main.route('/', methods=['GET', 'POST'])
 def home():
-    """Home page: handle user name and email input."""
-    form = NameForm()
-    if form.validate_on_submit():
-        name_entered = form.name.data
-        email_entered = form.email.data
-        user_by_name = User.query.filter_by(username=name_entered).first()
-        user_by_email = User.query.filter_by(email=email_entered).first()
-
-        if user_by_name:
-            session['known'] = True
-            session['name'] = name_entered
-            flash("Welcome back!", "success")
-        elif user_by_email:
-            flash("This email is already registered. Please use another email.", "warning")
-            return redirect(url_for('.home'))
-        else:
-            # Create the user if does not exist
-            user = User(username=name_entered, email=email_entered)
-            db.session.add(user)
-            db.session.commit()
-            session['known'] = False
-            session['name'] = name_entered
-            flash("Great! We hope you enjoy the community", "success")
-
-        form.name.data = ''
-        form.email.data = ''
+    form = CompositionForm()
+    if current_user.can(Permission.PUBLISH) and form.validate_on_submit():
+        composition = Composition(
+            release_type=form.release_type.data,
+            title=form.title.data,
+            description=form.description.data,
+            artist=current_user._get_current_object()
+        )
+        db.session.add(composition)
+        db.session.commit()
+        flash("Composition published successfully!", "success")
         return redirect(url_for('.home'))
 
-    return render_template('index.html', form=form, name=session.get('name'), known=session.get('known', False))
+    compositions = Composition.query.order_by(
+        Composition.timestamp.desc()
+    ).all()
+
+    return render_template(
+        'index.html',
+        form=form,
+        compositions=compositions
+    )
 
 @main.route('/top-secret')
 @login_required
@@ -64,25 +67,34 @@ def user(username):
 # --- About ---
 @main.route('/about')
 def about():
-    return '''
-    <h2>About Me</h2>
-    <p>Hi! I'm currently learning Python and web development.
-    I hope to become really confident building full-stack web apps by the end of this course.
-    I love coding, coffee, and anything tech!</p>
-    '''
+    return render_template('about.html')
 
-# --- Songs ---
+
 @main.route('/songs', methods=['GET', 'POST'])
 def songs():
-    form = NameForm()
-    if form.validate_on_submit():
-        session['name'] = form.name.data
-        flash(f"Great! Welcome, {form.name.data}!", "success")
+    form = CompositionForm()
+    if current_user.is_authenticated and current_user.can(Permission.PUBLISH) and form.validate_on_submit():
+        composition = Composition(
+            release_type=form.release_type.data,
+            title=form.title.data,
+            description=form.description.data,
+            artist=current_user._get_current_object()
+        )
+        db.session.add(composition)
+        db.session.commit()
+        flash("Your composition has been published!", "success")
         return redirect(url_for('.songs'))
-    favorite_songs = ["Bohemian Rhapsody", "Blinding Lights", "Chiquitita"]
-    bad_song = "Baby Shark"
-    return render_template('index.html', form=form, name=session.get('name'),
-                           favorite_songs=favorite_songs, bad_song=bad_song)
+
+    compositions = Composition.query.order_by(
+        Composition.timestamp.desc()
+    ).all()
+
+    return render_template(
+        'songs.html',
+        form=form,
+        compositions=compositions
+    )
+
 
 # --- User profile ---
 #@main.route('/user/<username>')

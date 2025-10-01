@@ -46,6 +46,12 @@ def create_app(config_name='default'):
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
+    # --- Import models and inject context ---
+    from .models import Permission, ReleaseType  # 👈 ahora aquí
+    @app.context_processor
+    def inject_permissions_and_releases():
+        return dict(Permission=Permission, ReleaseType=ReleaseType)
+
     # --- Create database tables if they don't exist ---
     with app.app_context():
         db.create_all()

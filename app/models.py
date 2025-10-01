@@ -82,6 +82,12 @@ class User(UserMixin, db.Model):
 
     avatar_hash = db.Column(db.String(32))
 
+    compositions = db.relationship(
+        'Composition',
+        backref='artist',
+        lazy='dynamic'
+    )
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.role is None:
@@ -160,6 +166,40 @@ class User(UserMixin, db.Model):
         self.last_seen = datetime.utcnow()
         db.session.add(self)
         db.session.commit()
+
+def __repr__(self):
+    return f"<User {self.username}>"
+
+class ReleaseType:
+    SINGLE = 1
+    EXTENDED_PLAY = 2
+    ALBUM = 3
+
+class Composition(db.Model):
+    __tablename__ = 'compositions'
+    id = db.Column(db.Integer, primary_key=True)
+    release_type = db.Column(db.Integer)
+    title = db.Column(db.String(64))
+    description = db.Column(db.Text)
+    timestamp = db.Column(
+        db.DateTime,
+        index=True,
+        default=datetime.utcnow
+    )
+    artist_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    @property
+    def release_type_label(self):
+        mapping = {
+            1: "Single",
+            2: "EP",
+            3: "Album"
+        }
+        return mapping.get(self.release_type, "Unknown")
+
+
+    def __repr__(self):
+        return f"<Composition {self.title}>"
 
 
 @login_manager.user_loader

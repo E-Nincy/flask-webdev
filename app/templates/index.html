@@ -1,36 +1,85 @@
-{% extends 'base.html' %}
-{% import "bootstrap/wtf.html" as wtf %}
-{% import "macros.html" as macros %}
+{% extends "base.html" %}
 
-{% block title %}Ragtime{% endblock %}
+{% block title %}Welcome - Ragtime{% endblock %}
 
 {% block page_content %}
-<h1>Welcome to Ragtime, {% if name %}{{name}}{% else %}Anonymous{% endif %}!</h1>
-<div class="page-header">
-    {% if not known %}
-    <p>Mucho gusto! (Nice to meet you!)</p>
+
+<!-- Header -->
+<div class="page-header mb-4" style="text-align:left;">
+  <h1>
+    Welcome to Ragtime
+    {% if current_user.is_authenticated %}
+      , {{ current_user.username }}
     {% else %}
-    <p>Enjoy your stay</p>
+      , Anonymous
     {% endif %}
+  </h1>
+  <p class="lead">Discover the latest compositions!</p>
 </div>
 
-{{ wtf.quick_form(form) }}
-{% if favorite_songs %}
-    <h3>My Favorite Songs:</h3>
-    <ul>
-        {% for song in favorite_songs %}
-            {{ macros.render_song_title(song) }}
-        {% endfor %}
-    </ul>
-{% endif %}
+<!-- Button "Go to Songs" -->
+<div class="mb-4">
+  <a href="{{ url_for('main.songs') }}" class="btn btn-primary">Go to Songs</a>
+</div>
 
-{% if bad_song %}
-    <p>My least favorite song ever:</p>
-    <ul>
-        <li>{{ bad_song }}</li>
-    </ul>
-{% endif %}
-{% endblock page_content %}
+<hr class="mb-4">
+
+<!-- Compositions -->
+<ul class="compositions">
+  {% for composition in compositions %}
+    <li class="composition" style="margin-bottom:16px; clear:both; display:flex; align-items:flex-start;">
+
+      <!-- Avatar -->
+      <div class="composition-thumbnail" style="margin-right:16px;">  
+        <a href="{{ url_for('main.user', username=composition.artist.username) }}">
+          <img src="{{ composition.artist.unicornify(size=64) }}"
+               class="img-rounded profile-thumbnail" alt="Avatar">
+        </a>
+      </div>
+
+      <!-- Content -->
+      <div class="composition-content" style="flex:1;">
+
+        <!-- Artist + Release type -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="composition-artist">
+              <a href="{{ url_for('main.user', username=composition.artist.username) }}">
+                {{ composition.artist.username }}
+              </a>
+            </div>
+            <div class="composition-release-type"><span>{{ composition.release_type_label }}</span></div>
+          </div>
+         <div class="composition-date">{{ moment(composition.timestamp).fromNow() }}</div>
+        </div>
+
+
+        <!-- Títle -->
+        <div class="composition-title" style="color:#0d6efd; font-weight:bold;">
+          {{ composition.title }}
+        </div>
+
+        <!-- Description -->
+        <div class="composition-description">{{ composition.description }}</div>
+
+      </div>
+    </li>
+
+    <hr class="mb-4">
+    
+  {% else %}
+    <p>No compositions yet. Be the first to publish on the
+       <a href="{{ url_for('main.songs') }}">Songs</a> page!</p>
+  {% endfor %}
+</ul>
+
+{% endblock %}
+
+
+
+
+
+
 
 
 

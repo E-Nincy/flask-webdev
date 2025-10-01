@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Songs - Ragtime{% endblock %}
+
+{% block page_content %}
+  <div class="page-header">
+    {% if current_user.is_authenticated %}
+      <h1>Welcome to Ragtime, {{ current_user.username }} 🎶</h1>
+    {% else %}
+      <h1>Welcome to Ragtime, Anonymous 🎶</h1>
+    {% endif %}
+  </div>
+
+  <h2>Compositions</h2>
+
+  {# Form only if user can publish #}
+  {% if current_user.is_authenticated and current_user.can(Permission.PUBLISH) %}
+    <div class="well">
+      <h3>Publish a new composition</h3>
+      <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+          {{ form.release_type.label }}  
+          {{ form.release_type(class="form-control") }}
+        </div>
+        <div class="form-group">
+          {{ form.title.label }}  
+          {{ form.title(class="form-control") }}
+        </div>
+        <div class="form-group">
+          {{ form.description.label }}  
+          {{ form.description(class="form-control", rows=3) }}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+      </form>
+    </div>
+  {% endif %}
+
+  <!-- Compositions -->
+<ul class="compositions">
+  {% for composition in compositions %}
+    <li class="composition" style="margin-bottom:16px; clear:both; display:flex;">
+
+      <!-- Avatar -->
+      <div class="composition-thumbnail">
+        <a href="{{ url_for('main.user', username=composition.artist.username) }}">
+          <img src="{{ composition.artist.unicornify(size=64) }}"
+               class="img-rounded profile-thumbnail" alt="Avatar">
+        </a>
+      </div>
+
+      <!-- Content -->
+      <div class="composition-content" style="flex:1; margin-left:16px;">
+
+        <!-- Artist + Release type -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="composition-artist">
+              <a href="{{ url_for('main.user', username=composition.artist.username) }}">
+                {{ composition.artist.username }}
+              </a>
+            </div>
+            <div class="composition-release-type">
+              {{ composition.release_type_label }}
+            </div>
+          </div>
+         <div class="composition-date">{{ moment(composition.timestamp).fromNow() }}</div>
+        </div>
+
+
+        <!-- Title -->
+        <div class="composition-title" style="color:#0d6efd; font-weight:bold;">
+          {{ composition.title }}
+        </div>
+
+        <!-- Description -->
+        <div class="composition-description">{{ composition.description }}</div>
+
+      </div>
+    </li>
+
+    <hr class="mb-4">
+    
+  {% else %}
+    <p>No compositions yet. Be the first to publish on the
+       <a href="{{ url_for('main.songs') }}">Songs</a> page!</p>
+  {% endfor %}
+</ul>
+{% endblock %}
+
+
