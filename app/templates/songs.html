@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
 
 {% block title %}Songs - Ragtime{% endblock %}
 
@@ -86,6 +88,11 @@
        <a href="{{ url_for('main.songs') }}">Songs</a> page!</p>
   {% endfor %}
 </ul>
+{% if pagination %}
+  <div class="d-flex justify-content-center mt-4">
+    {{ macros.pagination_widget(pagination, '.home') }}
+  </div>
+{% endif %}
 {% endblock %}
 
 

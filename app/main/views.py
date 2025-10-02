@@ -1,4 +1,4 @@
-from flask import session, render_template, redirect, url_for, flash
+from flask import session, render_template, redirect, url_for, flash, request, current_app
 from . import main
 from .forms import NameForm, ZodiacForm, EditProfileForm, AdminLevelEditProfileForm, CompositionForm
 from .. import db
@@ -17,15 +17,6 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-@main.route('/')
-def index():
-    compositions = Composition.query.order_by(
-        Composition.timestamp.desc()
-    ).all()
-    return render_template(
-        'index.html',
-        compositions=compositions
-    )
 
 @main.route('/', methods=['GET', 'POST'])
 def home():
@@ -41,15 +32,21 @@ def home():
         db.session.commit()
         flash("Composition published successfully!", "success")
         return redirect(url_for('.home'))
+    
+    page = request.args.get('page', 1, type=int)
+    pagination = Composition.query.order_by(Composition.timestamp.desc()).paginate(
+        page=page,
+        per_page=current_app.config.get('RAGTIME_COMPS_PER_PAGE'),
+        error_out=False
+    )
+    compositions = pagination.items
 
-    compositions = Composition.query.order_by(
-        Composition.timestamp.desc()
-    ).all()
 
     return render_template(
         'index.html',
         form=form,
-        compositions=compositions
+        compositions=compositions,
+        pagination=pagination
     )
 
 @main.route('/top-secret')
@@ -85,14 +82,20 @@ def songs():
         flash("Your composition has been published!", "success")
         return redirect(url_for('.songs'))
 
-    compositions = Composition.query.order_by(
-        Composition.timestamp.desc()
-    ).all()
+    page = request.args.get('page', 1, type=int)
+    pagination = Composition.query.order_by(Composition.timestamp.desc()).paginate(
+        page=page,
+        per_page=current_app.config.get('RAGTIME_COMPS_PER_PAGE'),
+        error_out=False
+    )
+    compositions = pagination.items
+
 
     return render_template(
-        'songs.html',
+        'index.html',
         form=form,
-        compositions=compositions
+        compositions=compositions,
+        pagination=pagination
     )
 
 
