@@ -6,6 +6,8 @@ from flask import current_app
 import jwt
 import hashlib
 from datetime import datetime, timedelta
+import bleach
+import re
 
 class Permission:
     FOLLOW = 1
@@ -60,6 +62,15 @@ class Role(db.Model):
             db.session.add(role)
         db.session.commit()
 
+class Follow(db.Model):
+    __tablename__ = 'follows'
+    follower_id = db.Column(db.Integer,
+                            db.ForeignKey('users.id'),
+                            primary_key=True)
+    following_id = db.Column(db.Integer,
+                             db.ForeignKey('users.id'),
+                             primary_key=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
@@ -88,11 +99,47 @@ class User(UserMixin, db.Model):
         lazy='dynamic'
     )
 
+    following = db.relationship(
+        'Follow',
+        foreign_keys=[Follow.follower_id],
+        backref=db.backref('follower', lazy='joined'),
+        lazy='dynamic',
+        cascade='all, delete-orphan'
+    )
+    followers = db.relationship(
+        'Follow',
+        foreign_keys=[Follow.following_id],
+        backref=db.backref('following', lazy='joined'),
+        lazy='dynamic',
+        cascade='all, delete-orphan'
+    )
+
+    def follow(self, user):
+        if not self.is_following(user):
+            f = Follow(follower=self, following=user)
+            db.session.add(f)
+
+    def unfollow(self, user):
+        f = self.following.filter_by(following_id=user.id).first()
+        if f:
+            db.session.delete(f)
+
+    def is_following(self, user):
+        if user.id is None:
+            return False
+        return self.following.filter_by(
+            following_id=user.id).first() is not None
+
+    def is_a_follower(self, user):
+        if user.id is None:
+            return False
+        return self.followers.filter_by(
+            follower_id=user.id).first() is not None
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.role is None:
             self.role = self.insert_default_role()
-        # Generar el hash de avatar si email existe y avatar_hash no
         if self.email is not None and self.avatar_hash is None:
             self.avatar_hash = self.email_hash()
 
@@ -181,6 +228,8 @@ class Composition(db.Model):
     release_type = db.Column(db.Integer)
     title = db.Column(db.String(64))
     description = db.Column(db.Text)
+    description_html = db.Column(db.Text)
+    slug = db.Column(db.String(128), unique=True, index=True)
     timestamp = db.Column(
         db.DateTime,
         index=True,
@@ -200,6 +249,23 @@ class Composition(db.Model):
 
     def __repr__(self):
         return f"<Composition {self.title}>"
+    
+    def generate_slug(self):
+        self.slug = f"{self.id}-" + re.sub(r'[^\w]+', '-', self.title.lower())
+        db.session.add(self)
+        db.session.commit()
+    
+    @staticmethod
+    def on_changed_description(target, value, oldvalue, initiator):
+        allowed_tags = ['a']
+        html = bleach.linkify(bleach.clean(value,
+                                           tags=allowed_tags,
+                                           strip=True))
+        target.description_html = html
+
+db.event.listen(Composition.description,
+                'set',
+                Composition.on_changed_description)
 
 
 @login_manager.user_loader

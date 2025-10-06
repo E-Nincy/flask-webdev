@@ -17,7 +17,9 @@ class Config:
     RAGTIME_MAIL_SUBJECT_PREFIX = 'Ragtime —'
     RAGTIME_MAIL_SENDER = 'Ragtime Admin <ragtime.flask@gmail.com>'
 
-    RAGTIME_COMPS_PER_PAGE = 20
+    RAGTIME_COMPS_PER_PAGE = 10
+
+    RAGTIME_FOLLOWERS_PER_PAGE = 5
 
     @staticmethod
     def init_app(app):

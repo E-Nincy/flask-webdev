@@ -1,0 +1,72 @@
+<ul class="compositions">
+  {% for composition in compositions %}
+    <li class="composition" style="margin-bottom:16px; clear:both; display:flex; align-items:flex-start;">
+
+      <!-- Avatar -->
+      <div class="composition-thumbnail" style="margin-right:16px;">  
+        <a href="{{ url_for('main.user', username=composition.artist.username) }}">
+          <img src="{{ composition.artist.unicornify(size=64) }}"
+               class="img-rounded profile-thumbnail" alt="Avatar">
+        </a>
+      </div>
+
+      <!-- Content -->
+      <div class="composition-content" style="flex:1;">
+
+        <!-- Artist + Release type -->
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="composition-artist">
+              <a href="{{ url_for('main.user', username=composition.artist.username) }}">
+                {{ composition.artist.username }}
+              </a>
+            </div>
+            <div class="composition-release-type"><span>{{ composition.release_type_label }}</span></div>
+          </div>
+         <div class="composition-date">{{ moment(composition.timestamp).fromNow() }}</div>
+        </div>
+
+        <!-- Title (with permalink) -->
+        <div class="composition-title" style="color:#0d6efd; font-weight:bold;">
+          <a href="{{ url_for('main.composition', slug=composition.slug) }}">
+           {{ composition.title }}
+          </a>
+        </div>
+
+        <!-- Description -->
+         <div class="composition-description">
+          {% if composition.description_html %}
+            {{ composition.description_html | safe }}
+          {% else %}
+            {{ composition.description }}
+          {% endif %}
+        </div>
+
+        <!-- Edit link (if owner) -->
+        <div class="composition-footer" style="text-align:left; margin-top:8px;">
+          {% if current_user.is_authenticated %}
+            {% if current_user == composition.artist %}
+              <a href="{{ url_for('main.edit_composition', slug=composition.slug) }}" 
+                 class="btn btn-sm btn-primary">
+                Edit
+              </a>
+            {% endif %}
+            {% if current_user.is_administrator() %}
+              <a href="{{ url_for('main.edit_composition', slug=composition.slug) }}" 
+                 class="btn btn-sm btn-danger">
+                Edit as Admin
+              </a>
+           {% endif %}
+          {% endif %}
+        </div>
+
+      </div>
+    </li>
+
+    <hr class="mb-4">
+    
+  {% else %}
+    <p>No compositions yet. Be the first to publish on the
+       <a href="{{ url_for('main.songs') }}">Songs</a> page!</p>
+  {% endfor %}
+</ul>

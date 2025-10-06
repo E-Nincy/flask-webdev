@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block title %}{{ compositions[0].title }} - Ragtime{% endblock %}
+
+{% block page_content %}
+
+<h2>{{ compositions[0].title }}</h2>
+
+{% include "_compositions.html" %}
+
+{% endblock %}

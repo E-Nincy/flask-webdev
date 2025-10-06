@@ -45,10 +45,43 @@
             {% if current_user.is_administrator() %}
                 <a class="btn btn-danger" href="{{ url_for('.admin_edit_profile', id=user.id) }}">Edit as Admin</a>
             {% endif %}
+
+            {# FOLLOW / UNFOLLOW BUTTONS #}
+            {% if current_user.can(Permission.FOLLOW) and user != current_user %}
+                {% if current_user.is_following(user) %}
+                    <a class="btn btn-warning" href="{{ url_for('.unfollow', username=user.username) }}">Unfollow</a>
+                {% else %}
+                    <a class="btn btn-primary" href="{{ url_for('.follow', username=user.username) }}">Follow</a>
+                {% endif %}
+            {% endif %}
+
+            {# SHOW FOLLOWERS / FOLLOWING BADGES #}
+            <span class="badge rounded-pill bg-primary">
+                <a href="{{ url_for('.followers', username=user.username) }}" style="color:white; text-decoration:none;">
+                    {{ user.followers.count() }} Followers
+                </a>
+            </span>
+            <span class="badge rounded-pill bg-primary">
+                <a href="{{ url_for('.following', username=user.username) }}" style="color:white; text-decoration:none;">
+                    {{ user.following.count() }} Following
+                </a>
+            </span>
+
+            {# SHOW "Follows you" IF APPLICABLE #}
+            {% if current_user.is_authenticated and current_user.is_a_follower(user) and user != current_user %}
+                <span class="mx-2">|</span>
+                <span class="badge bg-success" style="border-radius:0;">Follows you</span>
+            {% endif %}
+
         </div>
     </div>
 
 </div>
+<hr class="mb-4">
+
+<h3>Compositions by {{ user.username }}:</h3>
+{% include "_compositions.html" %}
+
 {% endblock %}
 
 

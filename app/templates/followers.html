@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% import "_macros.html" as macros %}
+
+{% block title %}Followers of {{ user.username }}{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    <h2>Followers of {{ user.username }}</h2>
+</div>
+
+{% if follows %}
+<ul class="list-group">
+  {% for item in follows %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      <a href="{{ url_for('main.user', username=item.user.username) }}">
+        <img src="{{ item.user.unicornify(32) }}" class="img-rounded me-2" alt="Avatar">
+        {{ item.user.username }}
+      </a>
+      <span class="text-muted small">{{ moment(item.timestamp).fromNow() }}</span>
+    </li>
+  {% endfor %}
+</ul>
+
+<nav aria-label="Page navigation">
+  {{ macros.pagination_widget(pagination, 'main.followers', username=user.username) }}
+</nav>
+
+
+{% else %}
+<p>{{ user.username }} has no followers yet.</p>
+{% endif %}
+
+{% endblock %}

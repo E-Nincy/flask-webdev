@@ -1,4 +1,4 @@
-from flask import session, render_template, redirect, url_for, flash, request, current_app
+from flask import abort, session, render_template, redirect, url_for, flash, request, current_app
 from . import main
 from .forms import NameForm, ZodiacForm, EditProfileForm, AdminLevelEditProfileForm, CompositionForm
 from .. import db
@@ -30,6 +30,9 @@ def home():
         )
         db.session.add(composition)
         db.session.commit()
+
+        composition.generate_slug()
+
         flash("Composition published successfully!", "success")
         return redirect(url_for('.home'))
     
@@ -59,7 +62,89 @@ def top_secret():
 @main.route('/user/<username>')
 def user(username):
     user = User.query.filter_by(username=username).first_or_404()
-    return render_template('user.html', user=user)
+    compositions = Composition.query.filter_by(artist=user).order_by(
+        Composition.timestamp.desc()
+    ).all()
+    return render_template('user.html', user=user, compositions=compositions)
+
+@main.route('/follow/<username>')
+@login_required
+@permission_required(Permission.FOLLOW)
+def follow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash("That is not a valid user.")
+        return redirect(url_for('.home'))
+    if current_user.is_following(user):
+        flash("Looks like you are already following that user.")
+        return redirect(url_for('.user', username=username))
+    current_user.follow(user)
+    db.session.commit()
+    flash(f"You are now following {username}")
+    return redirect(url_for('.user', username=username))
+
+@main.route('/followers/<username>')
+def followers(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash("That is not a valid user.")
+        return redirect(url_for('.home'))
+    page = request.args.get('page', 1, type=int)
+    pagination = user.followers.paginate(
+        page=page,
+        per_page=current_app.config['RAGTIME_FOLLOWERS_PER_PAGE'],
+        error_out=False)
+    # convert to only follower and timestamp
+    follows = [{'user': item.follower, 'timestamp': item.timestamp}
+               for item in pagination.items]
+    return render_template('followers.html',
+                           user=user,
+                           title="Followers of",
+                           endpoint='.followers',
+                           pagination=pagination,
+                           follows=follows)
+
+@main.route('/following/<username>')
+def following(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash("That is not a valid user.")
+        return redirect(url_for('.home'))
+    
+    page = request.args.get('page', 1, type=int)
+    pagination = user.following.paginate(
+        page=page,
+        per_page=current_app.config.get('RAGTIME_FOLLOWERS_PER_PAGE'),
+        error_out=False
+    )
+    
+    # Extrae los usuarios que sigue
+    follows = [{'user': item.following, 'timestamp': item.timestamp}
+               for item in pagination.items]
+    
+    return render_template('following.html',
+                           user=user,
+                           title="Following",
+                           endpoint='.following',
+                           pagination=pagination,
+                           follows=follows)
+
+@main.route('/unfollow/<username>')
+@login_required
+@permission_required(Permission.FOLLOW)
+def unfollow(username):
+    user = User.query.filter_by(username=username).first()
+    if user is None:
+        flash("That is not a valid user.")
+        return redirect(url_for('.home'))
+    if not current_user.is_following(user):
+        flash("You are not following this user.")
+        return redirect(url_for('.user', username=username))
+    current_user.unfollow(user)
+    db.session.commit()
+    flash(f"You have unfollowed {username}")
+    return redirect(url_for('.user', username=username))
+
 
 # --- About ---
 @main.route('/about')
@@ -92,17 +177,45 @@ def songs():
 
 
     return render_template(
-        'index.html',
+        'songs.html',
         form=form,
         compositions=compositions,
         pagination=pagination
     )
 
+@main.route('/composition/<slug>')
+def composition(slug):
+    composition = Composition.query.filter_by(slug=slug).first_or_404()
+    
+    return render_template(
+        'composition.html',
+        compositions=[composition],
+        pagination=None 
+    )
 
-# --- User profile ---
-#@main.route('/user/<username>')
-#def user_profile(username):
-    #return render_template("user.html", username=username)#
+@main.route('/edit/<slug>', methods=['GET', 'POST'])
+@login_required
+def edit_composition(slug):
+    composition = Composition.query.filter_by(slug=slug).first_or_404()
+
+    # Just can be acces by admni or author
+    if current_user != composition.artist and not current_user.is_administrator():
+        abort(403)
+
+    form = CompositionForm(obj=composition) 
+
+    if form.validate_on_submit():
+        composition.title = form.title.data
+        composition.release_type = form.release_type.data
+        composition.description = form.description.data
+        db.session.commit()
+        # Generate a new slug in case the title changes
+        composition.generate_slug()
+        flash("Composition updated successfully!", "success")
+        return redirect(url_for('main.composition', slug=composition.slug))
+
+    return render_template('edit_composition.html', form=form, composition=composition)
+
 
 @main.route('/edit-profile', methods=['GET', 'POST'])
 @login_required
@@ -137,7 +250,7 @@ def admin_edit_profile(id):
         user.bio = form.bio.data
         db.session.commit()
         flash('The profile has been updated by the admin!', 'success')
-        return redirect(url_for('.user_profile', username=user.username))
+        return redirect(url_for('.edit_profile', username=user.username))
 
     # Pre-fill the form
     form.username.data = user.username

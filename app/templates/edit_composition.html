@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Composition - {{ composition.title }}{% endblock %}
+
+{% block page_content %}
+  <div class="page-header">
+    <h1>Edit Composition</h1>
+  </div>
+
+  <form method="POST">
+    {{ form.hidden_tag() }}
+    
+    <div class="form-group">
+      {{ form.release_type.label }}  
+      {{ form.release_type(class="form-control") }}
+    </div>
+    
+    <div class="form-group">
+      {{ form.title.label }}  
+      {{ form.title(class="form-control") }}
+    </div>
+    
+    <div class="form-group">
+      {{ form.description.label }}  
+      {{ form.description(class="form-control", rows=5) }}
+    </div>
+    
+    {{ form.submit(class="btn btn-primary") }}
+  </form>
+{% endblock %}
