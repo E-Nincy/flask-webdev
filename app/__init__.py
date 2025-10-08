@@ -46,6 +46,10 @@ def create_app(config_name='default'):
     from .auth import auth as auth_blueprint
     app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
+    from .api import api as api_blueprint
+    app.register_blueprint(api_blueprint)
+
+
     # --- Import models and inject context ---
     from .models import Permission, ReleaseType  # 👈 ahora aquí
     @app.context_processor

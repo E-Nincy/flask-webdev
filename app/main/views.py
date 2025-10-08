@@ -1,4 +1,4 @@
-from flask import abort, session, render_template, redirect, url_for, flash, request, current_app
+from flask import abort, make_response, session, render_template, redirect, url_for, flash, request, current_app
 from . import main
 from .forms import NameForm, ZodiacForm, EditProfileForm, AdminLevelEditProfileForm, CompositionForm
 from .. import db
@@ -37,6 +37,16 @@ def home():
         return redirect(url_for('.home'))
     
     page = request.args.get('page', 1, type=int)
+
+    show_followed = False
+    if current_user.is_authenticated:
+        show_followed = bool(request.cookies.get('show_followed', ''))
+
+    if show_followed:
+        query = current_user.followed_compositions
+    else:
+        query = Composition.query
+
     pagination = Composition.query.order_by(Composition.timestamp.desc()).paginate(
         page=page,
         per_page=current_app.config.get('RAGTIME_COMPS_PER_PAGE'),
@@ -44,12 +54,12 @@ def home():
     )
     compositions = pagination.items
 
-
     return render_template(
         'index.html',
         form=form,
         compositions=compositions,
-        pagination=pagination
+        pagination=pagination,
+        show_followed=show_followed
     )
 
 @main.route('/top-secret')
@@ -145,6 +155,19 @@ def unfollow(username):
     flash(f"You have unfollowed {username}")
     return redirect(url_for('.user', username=username))
 
+@main.route('/all')
+@login_required
+def show_all():
+    resp = make_response(redirect(url_for('.home')))
+    resp.set_cookie('show_followed', '', max_age=30*24*60*60)  # 30 days
+    return resp
+
+@main.route('/followed')
+@login_required
+def show_followed():
+    resp = make_response(redirect(url_for('.home')))
+    resp.set_cookie('show_followed', '1', max_age=30*24*60*60)  # 30 days
+    return resp
 
 # --- About ---
 @main.route('/about')

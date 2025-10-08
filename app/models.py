@@ -1,8 +1,10 @@
 from . import db  # import the db object from __init__.py
+from itsdangerous import URLSafeTimedSerializer as WebSerializer
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin, AnonymousUserMixin
 from . import login_manager
-from flask import current_app
+from flask import current_app, url_for
+from .exceptions import ValidationError
 import jwt
 import hashlib
 from datetime import datetime, timedelta
@@ -136,13 +138,6 @@ class User(UserMixin, db.Model):
         return self.followers.filter_by(
             follower_id=user.id).first() is not None
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        if self.role is None:
-            self.role = self.insert_default_role()
-        if self.email is not None and self.avatar_hash is None:
-            self.avatar_hash = self.email_hash()
-
     def email_hash(self):
         return hashlib.md5(self.email.lower().encode('utf-8')).hexdigest()
     
@@ -184,10 +179,22 @@ class User(UserMixin, db.Model):
             db.session.commit()
         return user_role
     
+    @staticmethod
+    def add_self_follows():
+        for user in User.query.all():
+            if not user.is_following(user):
+                user.follow(user)
+                db.session.add(user)
+        db.session.commit()
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         if self.role is None:
             self.role = self.insert_default_role()
+        if self.email is not None and self.avatar_hash is None:
+            self.avatar_hash = self.email_hash()
+        if not self.is_following(self):
+            self.follow(self)
 
     # Prevent direct reading of password
     @property
@@ -213,6 +220,36 @@ class User(UserMixin, db.Model):
         self.last_seen = datetime.utcnow()
         db.session.add(self)
         db.session.commit()
+
+    @property
+    def followed_compositions(self):
+        return Composition.query.join(
+            Follow, Follow.following_id == Composition.artist_id
+        ).filter(Follow.follower_id == self.id)
+    
+    def generate_auth_token(self, expiration_sec=3600):
+        s = WebSerializer(current_app.config['SECRET_KEY'])
+        return s.dumps({'id': self.id})
+    
+    @staticmethod
+    def verify_auth_token(token):
+        s = WebSerializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token, max_age=3600)
+        except:
+            return None
+        return User.query.get(data['id'])
+    
+    def to_json(self):
+        json_user = {
+            'url': url_for('api.get_user', id=self.id),
+            'username': self.username,
+            'last_seen': self.last_seen.isoformat(),
+            'compositions_url': url_for('api.get_user_compositions', id=self.id, _external=True),
+            'followed_compositions_url': url_for('api.get_user_timeline', id=self.id, _external=True),
+            'composition_count': self.compositions.count()
+        }
+        return json_user
 
 def __repr__(self):
     return f"<User {self.username}>"
@@ -262,6 +299,38 @@ class Composition(db.Model):
                                            tags=allowed_tags,
                                            strip=True))
         target.description_html = html
+
+    def to_json(self):
+        json_composition = {
+            'url': url_for('api.get_composition', id=self.id, _external=True),
+            'release_type': self.release_type_label,
+            'title': self.title,
+            'description': self.description,
+            'description_html': self.description_html,
+            'timestamp': self.timestamp.isoformat(),
+            'artist_url': url_for('api.get_user', id=self.artist_id, _external=True)
+        }
+        return json_composition
+
+    @staticmethod
+    def from_json(json_composition):
+        release_type = json_composition.get('release_type')
+        title = json_composition.get('title')
+        description = json_composition.get('description')
+        
+        if release_type is None:
+            raise ValidationError("Composition must have a release type")
+        if title is None:
+            raise ValidationError("Composition must have a title")
+        if description is None:
+            raise ValidationError("Composition must have a description")
+        
+        return Composition(
+            release_type=release_type,
+            title=title,
+            description=description
+        )
+
 
 db.event.listen(Composition.description,
                 'set',

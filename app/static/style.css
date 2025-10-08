@@ -31,3 +31,10 @@ ul.compositions li.composition {
     margin-bottom: 16px;
 }
 
+.composition-tabs {
+    margin-top: 20px;
+}
+
+.nav-tabs {
+    margin-bottom: 15px;
+}

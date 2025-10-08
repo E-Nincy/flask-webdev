@@ -58,12 +58,12 @@
             {# SHOW FOLLOWERS / FOLLOWING BADGES #}
             <span class="badge rounded-pill bg-primary">
                 <a href="{{ url_for('.followers', username=user.username) }}" style="color:white; text-decoration:none;">
-                    {{ user.followers.count() }} Followers
+                    {{ user.followers.count() - 1 }} Followers
                 </a>
             </span>
             <span class="badge rounded-pill bg-primary">
                 <a href="{{ url_for('.following', username=user.username) }}" style="color:white; text-decoration:none;">
-                    {{ user.following.count() }} Following
+                    {{ user.following.count() - 1 }} Following
                 </a>
             </span>
 
